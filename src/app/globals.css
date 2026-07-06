@@ -1,30 +1,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@layer components {
-  .btn-primary {
-    @apply bg-emerald-700 hover:bg-emerald-800 text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm;
-  }
-  .input {
-    @apply w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition;
-  }
-  .card {
-    @apply bg-white rounded-xl border border-gray-100;
-  }
-  .badge-paid {
-    @apply bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1 rounded-full;
-  }
-  .badge-unpaid {
-    @apply bg-amber-100 text-amber-700 text-xs font-medium px-2.5 py-1 rounded-full;
-  }
-  .badge-available {
-    @apply bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-1 rounded-full;
-  }
-  .badge-occupied {
-    @apply bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full;
-  }
-  .badge-maintenance {
-    @apply bg-orange-100 text-orange-700 text-xs font-medium px-2.5 py-1 rounded-full;
-  }
-}
