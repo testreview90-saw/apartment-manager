@@ -32,36 +32,36 @@ export default async function DashboardPage() {
   return (
     <div className="p-6 max-w-5xl">
       <div className="mb-7">
-        <h1 className="text-xl font-bold text-gray-900">ภาพรวม</h1>
+        <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-0.5">{monthLabel}</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-gray-500 font-medium">ห้องที่มีผู้เช่า</span>
+            <span className="text-xs text-gray-500 font-medium">Occupied</span>
             <div className="w-7 h-7 bg-emerald-700 rounded-lg flex items-center justify-center">
               <Building2 size={13} className="text-white" />
             </div>
           </div>
           <div className="text-2xl font-bold text-emerald-700">{occupied}</div>
-          <div className="text-xs text-gray-400 mt-0.5">ห้อง</div>
+          <div className="text-xs text-gray-400 mt-0.5">rooms</div>
         </div>
 
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-gray-500 font-medium">ห้องว่าง</span>
+            <span className="text-xs text-gray-500 font-medium">Available</span>
             <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
               <CheckCircle2 size={13} className="text-white" />
             </div>
           </div>
           <div className="text-2xl font-bold text-green-700">{available}</div>
-          <div className="text-xs text-gray-400 mt-0.5">ห้อง</div>
+          <div className="text-xs text-gray-400 mt-0.5">rooms</div>
         </div>
 
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-gray-500 font-medium">ค้างชำระ</span>
+            <span className="text-xs text-gray-500 font-medium">Unpaid</span>
             <div className="w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center">
               <AlertCircle size={13} className="text-white" />
             </div>
@@ -74,22 +74,22 @@ export default async function DashboardPage() {
 
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-gray-500 font-medium">เก็บได้เดือนนี้</span>
+            <span className="text-xs text-gray-500 font-medium">Collected</span>
             <div className="w-7 h-7 bg-teal-600 rounded-lg flex items-center justify-center">
               <TrendingUp size={13} className="text-white" />
             </div>
           </div>
           <div className="text-xl font-bold text-teal-700">{formatCurrency(totalCollected)}</div>
-          <div className="text-xs text-gray-400 mt-0.5">{paidAgg._count.id} บิลชำระแล้ว</div>
+          <div className="text-xs text-gray-400 mt-0.5">{paidAgg._count.id} bills paid</div>
         </div>
       </div>
 
       <div className="card mb-4">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">บิลค้างชำระ</h2>
+          <h2 className="text-sm font-semibold text-gray-900">Unpaid Bills - Call List</h2>
           {unpaidBills.length > 0 && (
             <span className="text-xs bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-medium">
-              {unpaidBills.length} ราย
+              {unpaidBills.length} unpaid
             </span>
           )}
         </div>
@@ -97,7 +97,7 @@ export default async function DashboardPage() {
         {unpaidBills.length === 0 ? (
           <div className="px-5 py-10 text-center">
             <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">เก็บเงินครบทุกห้องแล้วเดือนนี้</p>
+            <p className="text-sm text-gray-500">All bills paid this month!</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
@@ -108,9 +108,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-gray-900 truncate">{bill.tenant.fullName}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    ห้อง {bill.room.roomNumber}
-                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">Room {bill.room.roomNumber}</div>
                 </div>
                 <div className="text-sm font-bold text-gray-900 flex-shrink-0">
                   {formatCurrency(bill.totalAmount)}
@@ -132,7 +130,7 @@ export default async function DashboardPage() {
         <div className="bg-orange-50 border border-orange-100 rounded-xl px-5 py-3.5 flex items-center gap-3">
           <Wrench size={15} className="text-orange-500 flex-shrink-0" />
           <span className="text-sm text-orange-700">
-            มีห้องที่อยู่ระหว่างซ่อมบำรุง {maintenance} ห้อง
+            {maintenance} room(s) under maintenance
           </span>
         </div>
       )}
