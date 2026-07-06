@@ -7,35 +7,29 @@ import { Building2, CheckCircle2, AlertCircle, TrendingUp, Phone, Wrench } from 
 export default async function DashboardPage() {
   const month = currentMonth()
   const now = new Date()
-
   const [occupied, available, maintenance] = await Promise.all([
     prisma.room.count({ where: { status: 'occupied' } }),
     prisma.room.count({ where: { status: 'available' } }),
     prisma.room.count({ where: { status: 'maintenance' } }),
   ])
-
   const unpaidBills = await prisma.bill.findMany({
     where: { billingMonth: month, status: 'unpaid' },
     include: { tenant: true, room: true },
     orderBy: { totalAmount: 'desc' },
   })
-
   const paidAgg = await prisma.bill.aggregate({
     where: { billingMonth: month, status: 'paid' },
     _sum: { totalAmount: true },
     _count: { id: true },
   })
-
   const totalCollected = paidAgg._sum.totalAmount ?? 0
   const monthLabel = now.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
-
   return (
     <div className="p-6 max-w-5xl">
       <div className="mb-7">
         <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-0.5">{monthLabel}</p>
       </div>
-
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
@@ -47,7 +41,6 @@ export default async function DashboardPage() {
           <div className="text-2xl font-bold text-emerald-700">{occupied}</div>
           <div className="text-xs text-gray-400 mt-0.5">rooms</div>
         </div>
-
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-gray-500 font-medium">Available</span>
@@ -58,7 +51,6 @@ export default async function DashboardPage() {
           <div className="text-2xl font-bold text-green-700">{available}</div>
           <div className="text-xs text-gray-400 mt-0.5">rooms</div>
         </div>
-
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-gray-500 font-medium">Unpaid</span>
@@ -71,7 +63,6 @@ export default async function DashboardPage() {
             {formatCurrency(unpaidBills.reduce((s, b) => s + b.totalAmount, 0))}
           </div>
         </div>
-
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-gray-500 font-medium">Collected</span>
@@ -83,7 +74,6 @@ export default async function DashboardPage() {
           <div className="text-xs text-gray-400 mt-0.5">{paidAgg._count.id} bills paid</div>
         </div>
       </div>
-
       <div className="card mb-4">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900">Unpaid Bills - Call List</h2>
@@ -93,7 +83,6 @@ export default async function DashboardPage() {
             </span>
           )}
         </div>
-
         {unpaidBills.length === 0 ? (
           <div className="px-5 py-10 text-center">
             <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-2" />
@@ -125,13 +114,10 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
-
       {maintenance > 0 && (
         <div className="bg-orange-50 border border-orange-100 rounded-xl px-5 py-3.5 flex items-center gap-3">
           <Wrench size={15} className="text-orange-500 flex-shrink-0" />
-          <span className="text-sm text-orange-700">
-            {maintenance} room(s) under maintenance
-          </span>
+          <span className="text-sm text-orange-700">{maintenance} room(s) under maintenance</span>
         </div>
       )}
     </div>
