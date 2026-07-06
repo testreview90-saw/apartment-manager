@@ -6,7 +6,7 @@ import { Building2, CheckCircle2, AlertCircle, TrendingUp, Phone, Wrench } from 
 
 export default async function DashboardPage() {
   const month = currentMonth()
-  const now   = new Date()
+  const now = new Date()
 
   const [occupied, available, maintenance] = await Promise.all([
     prisma.room.count({ where: { status: 'occupied' } }),
@@ -15,19 +15,19 @@ export default async function DashboardPage() {
   ])
 
   const unpaidBills = await prisma.bill.findMany({
-    where:   { billingMonth: month, status: 'unpaid' },
+    where: { billingMonth: month, status: 'unpaid' },
     include: { tenant: true, room: true },
     orderBy: { totalAmount: 'desc' },
   })
 
   const paidAgg = await prisma.bill.aggregate({
     where: { billingMonth: month, status: 'paid' },
-    _sum:   { totalAmount: true },
+    _sum: { totalAmount: true },
     _count: { id: true },
   })
 
   const totalCollected = paidAgg._sum.totalAmount ?? 0
-  const monthLabel     = now.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
+  const monthLabel = now.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
 
   return (
     <div className="p-6 max-w-5xl">
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
 
       <div className="card mb-4">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">บิลค้างชำระ — รายชื่อที่ต้องโทรหา</h2>
+          <h2 className="text-sm font-semibold text-gray-900">บิลค้างชำระ</h2>
           {unpaidBills.length > 0 && (
             <span className="text-xs bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-medium">
               {unpaidBills.length} ราย
@@ -109,14 +109,14 @@ export default async function DashboardPage() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-gray-900 truncate">{bill.tenant.fullName}</div>
                   <div className="text-xs text-gray-400 mt-0.5">
-                    ห้อง {bill.room.roomNumber} · ครบ {bill.dueDate.toLocaleDateString('th-TH')}
+                    ห้อง {bill.room.roomNumber}
                   </div>
                 </div>
                 <div className="text-sm font-bold text-gray-900 flex-shrink-0">
                   {formatCurrency(bill.totalAmount)}
                 </div>
                 
-                  href={`tel:${bill.tenant.phone}`}
+                  href={"tel:" + bill.tenant.phone}
                   className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
                 >
                   <Phone size={11} />
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
         <div className="bg-orange-50 border border-orange-100 rounded-xl px-5 py-3.5 flex items-center gap-3">
           <Wrench size={15} className="text-orange-500 flex-shrink-0" />
           <span className="text-sm text-orange-700">
-            มีห้องที่อยู่ระหว่างซ่อมบำรุง <strong>{maintenance}</strong> ห้อง
+            มีห้องที่อยู่ระหว่างซ่อมบำรุง {maintenance} ห้อง
           </span>
         </div>
       )}
