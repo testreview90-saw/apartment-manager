@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
+import Link from 'next/link'
 
 export default async function RoomsPage() {
   const rooms = await prisma.room.findMany({
@@ -38,45 +39,55 @@ export default async function RoomsPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
         {rooms.map(room => (
-          <div
+          <Link
             key={room.id}
-            style={{
-              background: statusBg[room.status] || 'white',
-              border: `1px solid ${statusColor[room.status] || '#e5e7eb'}`,
-              borderRadius: '12px',
-              padding: '16px',
-            }}
+            href={"/dashboard/rooms/" + room.id}
+            style={{ textDecoration: 'none' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827' }}>
-                {room.roomNumber}
-              </span>
-              <span style={{
-                fontSize: '11px',
-                fontWeight: '500',
-                color: statusColor[room.status],
-                background: 'white',
-                padding: '2px 8px',
-                borderRadius: '999px',
-                border: `1px solid ${statusColor[room.status]}`,
-              }}>
-                {statusLabel[room.status]}
-              </span>
+            <div
+              style={{
+                background: statusBg[room.status] || 'white',
+                border: `1px solid ${statusColor[room.status] || '#e5e7eb'}`,
+                borderRadius: '12px',
+                padding: '16px',
+                cursor: 'pointer',
+                transition: 'box-shadow 0.15s',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827' }}>
+                  {room.roomNumber}
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  color: statusColor[room.status],
+                  background: 'white',
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  border: `1px solid ${statusColor[room.status]}`,
+                }}>
+                  {statusLabel[room.status]}
+                </span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                Floor {room.floor} · {room.monthlyRent.toLocaleString()} THB/mo
+              </p>
+              {room.tenant && (
+                <p style={{ fontSize: '13px', color: '#374151', fontWeight: '500', marginTop: '8px' }}>
+                  {room.tenant.fullName}
+                </p>
+              )}
+              {room.tenant && (
+                <p style={{ fontSize: '12px', color: '#6b7280' }}>{room.tenant.phone}</p>
+              )}
+              {room.status === 'available' && (
+                <p style={{ fontSize: '12px', color: '#16a34a', marginTop: '8px', fontWeight: '500' }}>
+                  + Add tenant
+                </p>
+              )}
             </div>
-            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-              Floor {room.floor} · {room.monthlyRent.toLocaleString()} THB/mo
-            </p>
-            {room.tenant && (
-              <p style={{ fontSize: '13px', color: '#374151', fontWeight: '500', marginTop: '8px' }}>
-                {room.tenant.fullName}
-              </p>
-            )}
-            {room.tenant && (
-              <p style={{ fontSize: '12px', color: '#6b7280' }}>
-                {room.tenant.phone}
-              </p>
-            )}
-          </div>
+          </Link>
         ))}
       </div>
     </div>
