@@ -23,7 +23,10 @@ export default async function BillsPage() {
 
   const bills = await prisma.bill.findMany({
     where: { billingMonth: month },
-    include: { tenant: true, room: true },
+    include: { 
+  tenant: { select: { fullName: true, phone: true } },
+  room: { select: { roomNumber: true } },
+},
     orderBy: { room: { roomNumber: 'asc' } },
   })
 
