@@ -8,34 +8,43 @@ datasource db {
 }
 
 model Room {
-  id          Int      @id @default(autoincrement())
-  roomNumber  String   @unique
-  floor       Int
-  monthlyRent Float
-  status      String   @default("available")
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  tenant      Tenant?
-  bills       Bill[]
+  id           Int           @id @default(autoincrement())
+  roomNumber   String        @unique
+  floor        Int
+  monthlyRent  Float
+  status       String        @default("available") // available | occupied | maintenance
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  tenant       Tenant?
+  bills        Bill[]
   applications Application[]
+
   @@map("rooms")
 }
 
 model Tenant {
-  id         Int      @id @default(autoincrement())
-  roomId     Int      @unique
+  id         Int       @id @default(autoincrement())
+
+  // IMPORTANT FIX:
+  // roomId must be optional so a moved-out tenant can stay in history
+  // without blocking the room from receiving a new tenant.
+  roomId     Int?      @unique
+
   fullName   String
   phone      String
   idPhoto    String?
   moveInDate DateTime
   deposit    Float
-  status     String   @default("active")
+  status     String    @default("active") // active | moved_out
   notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  room       Room     @relation(fields: [roomId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  room       Room?     @relation(fields: [roomId], references: [id])
   bills      Bill[]
+
   @@map("tenants")
 }
 
@@ -45,10 +54,12 @@ model Application {
   applicantName String
   phone         String
   notes         String?
-  status        String   @default("new")
+  status        String   @default("new") // new | approved | rejected | waitlisted | moved_in
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
   room          Room?    @relation(fields: [roomId], references: [id])
+
   @@map("applications")
 }
 
@@ -70,13 +81,15 @@ model Bill {
   elecAmount   Float     @default(0)
   totalAmount  Float     @default(0)
   dueDate      DateTime
-  status       String    @default("unpaid")
+  status       String    @default("unpaid") // unpaid | paid
   paidDate     DateTime?
   notes        String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
   tenant       Tenant    @relation(fields: [tenantId], references: [id])
   room         Room      @relation(fields: [roomId], references: [id])
+
   @@unique([tenantId, billingMonth])
   @@map("bills")
 }
@@ -85,5 +98,6 @@ model Setting {
   id           Int    @id @default(autoincrement())
   settingKey   String @unique
   settingValue String
+
   @@map("settings")
 }

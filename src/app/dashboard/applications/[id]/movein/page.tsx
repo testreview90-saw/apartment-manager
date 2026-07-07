@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
@@ -7,41 +8,70 @@ import Link from 'next/link'
 function parseNotes(notes: string) {
   const result: Record<string, string> = {}
   if (!notes) return result
+
   notes.split(' | ').forEach(part => {
-    const idx = part.indexOf(': ')
-    if (idx > -1) {
-      result[part.slice(0, idx).trim()] = part.slice(idx + 2).trim()
+    const index = part.indexOf(': ')
+    if (index > -1) {
+      result[part.slice(0, index).trim()] = part.slice(index + 2).trim()
     }
   })
+
   return result
 }
 
 async function confirmMoveIn(formData: FormData) {
   'use server'
-  const appId      = parseInt(formData.get('appId') as string)
-  const roomId     = parseInt(formData.get('roomId') as string)
-  const fullName   = formData.get('fullName') as string
-  const phone      = formData.get('phone') as string
-  const moveInDate = formData.get('moveInDate') as string
-  const deposit    = parseFloat(formData.get('deposit') as string) || 0
-  const notes      = formData.get('notes') as string
 
-  // Check room is still available
-  const room = await prisma.room.findUnique({ where: { id: roomId } })
-  if (!room || room.status !== 'available') {
-    throw new Error('Room is no longer available')
-  }
+  const appId = Number(formData.get('appId'))
+  const roomId = Number(formData.get('roomId'))
+  const fullName = String(formData.get('fullName') || '').trim()
+  const phone = String(formData.get('phone') || '').trim()
+  const moveInDate = String(formData.get('moveInDate') || '')
+  const deposit = Number(formData.get('deposit')) || 0
+  const notes = String(formData.get('notes') || '').trim()
 
-  // Create tenant
-  await prisma.tenant.create({
-    data: { roomId, fullName, phone, moveInDate: new Date(moveInDate), deposit, status: 'active', notes: notes || null },
+  if (!appId || !roomId || !fullName || !phone || !moveInDate) return
+
+  await prisma.$transaction(async tx => {
+    const room = await tx.room.findUnique({
+      where: { id: roomId },
+      include: { tenant: true },
+    })
+
+    if (!room || room.status !== 'available' || room.tenant) {
+      throw new Error('Room is no longer available.')
+    }
+
+    const application = await tx.application.findUnique({ where: { id: appId } })
+    if (!application || application.status === 'moved_in') {
+      throw new Error('Application is not valid for move-in.')
+    }
+
+    await tx.tenant.create({
+      data: {
+        roomId,
+        fullName,
+        phone,
+        moveInDate: new Date(moveInDate),
+        deposit,
+        status: 'active',
+        notes: notes || null,
+      },
+    })
+
+    await tx.room.update({
+      where: { id: roomId },
+      data: { status: 'occupied' },
+    })
+
+    await tx.application.update({
+      where: { id: appId },
+      data: {
+        status: 'moved_in',
+        roomId,
+      },
+    })
   })
-
-  // Update room status
-  await prisma.room.update({ where: { id: roomId }, data: { status: 'occupied' } })
-
-  // Mark application as moved_in (store in notes or just delete)
-  await prisma.application.update({ where: { id: appId }, data: { status: 'approved', roomId } })
 
   revalidatePath('/dashboard/rooms')
   revalidatePath('/dashboard/applications')
@@ -49,31 +79,47 @@ async function confirmMoveIn(formData: FormData) {
 }
 
 const inputStyle = {
-  width: '100%', padding: '9px 12px', border: '1px solid #d1d5db',
-  borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' as const,
+  width: '100%',
+  padding: '9px 12px',
+  border: '1px solid #d1d5db',
+  borderRadius: '8px',
+  fontSize: '14px',
+  boxSizing: 'border-box' as const,
 }
+
 const labelStyle = {
-  display: 'block' as const, fontSize: '13px',
-  fontWeight: '500' as const, color: '#374151', marginBottom: '4px',
+  display: 'block' as const,
+  fontSize: '13px',
+  fontWeight: '500' as const,
+  color: '#374151',
+  marginBottom: '4px',
 }
 
 export default async function MoveInPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const app = await prisma.application.findUnique({ where: { id: parseInt(id) } })
-  if (!app) redirect('/dashboard/applications')
+  const appId = Number(id)
 
-  const parsed   = parseNotes(app.notes || '')
-  const roomPref = parsed['Room pref'] || ''
-  const moveIn   = parsed['Move-in'] || new Date().toISOString().split('T')[0]
+  if (!appId) redirect('/dashboard/applications')
 
-  // Find available rooms
-  const availableRooms = await prisma.room.findMany({
-    where: { status: 'available' },
-    orderBy: { roomNumber: 'asc' },
+  const app = await prisma.application.findUnique({
+    where: { id: appId },
+    include: { room: true },
   })
 
-  // Pre-select room if preference matches
-  const preferredRoom = availableRooms.find(r => r.roomNumber === roomPref)
+  if (!app) redirect('/dashboard/applications')
+  if (app.status === 'moved_in') redirect('/dashboard/applications')
+
+  const parsed = parseNotes(app.notes || '')
+  const moveIn = parsed['Move-in'] || new Date().toISOString().split('T')[0]
+
+  const availableRooms = await prisma.room.findMany({
+    where: { status: 'available' },
+    orderBy: [{ floor: 'asc' }, { roomNumber: 'asc' }],
+  })
+
+  const preferredRoom = app.roomId
+    ? availableRooms.find(room => room.id === app.roomId)
+    : availableRooms.find(room => room.roomNumber === parsed['Room pref'])
 
   return (
     <div className="page-pad" style={{ maxWidth: '600px' }}>
@@ -96,41 +142,33 @@ export default async function MoveInPage({ params }: { params: Promise<{ id: str
           <form action={confirmMoveIn}>
             <input type="hidden" name="appId" value={app.id} />
 
-            {/* Application summary */}
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '14px 16px', marginBottom: '24px' }}>
               <p style={{ fontSize: '13px', fontWeight: '600', color: '#15803d', marginBottom: '4px' }}>From application</p>
               <p style={{ fontSize: '15px', fontWeight: '700', color: '#111827' }}>{app.applicantName}</p>
               <p style={{ fontSize: '13px', color: '#15803d' }}>{app.phone}</p>
-              {Object.entries(parsed).map(([k, v]) => (
-                <p key={k} style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{k}: {v}</p>
+              {Object.entries(parsed).map(([key, value]) => (
+                <p key={key} style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>{key}: {value}</p>
               ))}
             </div>
 
-            {/* Room selection */}
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Assign Room *</label>
-              <select
-                name="roomId"
-                required
-                defaultValue={preferredRoom?.id || ''}
-                style={{ ...inputStyle, background: 'white' }}
-              >
+              <select name="roomId" required defaultValue={preferredRoom?.id || ''} style={{ ...inputStyle, background: 'white' }}>
                 <option value="">Select a room...</option>
-                {availableRooms.map(r => (
-                  <option key={r.id} value={r.id}>
-                    Room {r.roomNumber} — Floor {r.floor} — {r.monthlyRent.toLocaleString()} THB/mo
-                    {r.roomNumber === roomPref ? ' ← preferred' : ''}
+                {availableRooms.map(room => (
+                  <option key={room.id} value={room.id}>
+                    Room {room.roomNumber} — Floor {room.floor} — {room.monthlyRent.toLocaleString()} THB/mo
+                    {room.id === preferredRoom?.id ? ' ← preferred' : ''}
                   </option>
                 ))}
               </select>
-              {roomPref && !preferredRoom && (
+              {app.roomId && !preferredRoom && (
                 <p style={{ fontSize: '12px', color: '#d97706', marginTop: '4px' }}>
-                  ⚠ Preferred room {roomPref} is not available. Please select another.
+                  ⚠ Preferred room is not available. Please select another room.
                 </p>
               )}
             </div>
 
-            {/* Tenant details */}
             <div className="two-col" style={{ marginBottom: '16px' }}>
               <div>
                 <label style={labelStyle}>Full Name *</label>
@@ -149,25 +187,17 @@ export default async function MoveInPage({ params }: { params: Promise<{ id: str
               </div>
               <div>
                 <label style={labelStyle}>Deposit (THB)</label>
-                <input name="deposit" type="number" placeholder="e.g. 7000" style={inputStyle} />
+                <input name="deposit" type="number" min="0" step="0.01" placeholder="e.g. 7000" style={inputStyle} />
               </div>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={labelStyle}>Notes (carried over from application)</label>
-              <textarea
-                name="notes"
-                rows={2}
-                defaultValue={app.notes || ''}
-                style={{ ...inputStyle, resize: 'vertical' as const }}
-              />
+              <label style={labelStyle}>Notes</label>
+              <textarea name="notes" rows={2} defaultValue={app.notes || ''} style={{ ...inputStyle, resize: 'vertical' as const }} />
             </div>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button
-                type="submit"
-                style={{ background: '#15803d', color: 'white', border: 'none', borderRadius: '8px', padding: '11px 24px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
-              >
+              <button type="submit" style={{ background: '#15803d', color: 'white', border: 'none', borderRadius: '8px', padding: '11px 24px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
                 Confirm Move In
               </button>
               <Link href="/dashboard/applications" style={{ fontSize: '14px', color: '#6b7280' }}>

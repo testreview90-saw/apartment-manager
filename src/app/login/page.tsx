@@ -1,4 +1,5 @@
 'use client'
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -8,26 +9,28 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
+
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       })
+
       if (res.ok) {
         router.push('/dashboard')
         router.refresh()
-      } else {
-        const data = await res.json()
-        setError(data.error || 'Wrong username or password')
+        return
       }
+
+      const data = await res.json().catch(() => null)
+      setError(data?.error || 'Wrong username or password')
     } catch {
-      setError('Something went wrong')
+      setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -41,7 +44,9 @@ export default function LoginPage() {
             <span style={{ color: 'white', fontSize: '28px' }}>🏢</span>
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827' }}>Apartment Manager</h1>
+          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '6px' }}>Secure admin sign in</p>
         </div>
+
         <div style={{ background: 'white', borderRadius: '16px', padding: '32px', border: '1px solid #e5e7eb' }}>
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '16px' }}>
@@ -51,10 +56,12 @@ export default function LoginPage() {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }}
-                placeholder="admin"
+                placeholder="Enter username"
+                autoComplete="username"
                 required
               />
             </div>
+
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>Password</label>
               <input
@@ -62,19 +69,22 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }}
-                placeholder="password"
+                placeholder="Enter password"
+                autoComplete="current-password"
                 required
               />
             </div>
+
             {error && (
               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 12px', fontSize: '14px', color: '#dc2626', marginBottom: '16px' }}>
                 {error}
               </div>
             )}
+
             <button
               type="submit"
               disabled={loading}
-              style={{ width: '100%', background: '#15803d', color: 'white', border: 'none', borderRadius: '8px', padding: '11px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}
+              style={{ width: '100%', background: '#15803d', color: 'white', border: 'none', borderRadius: '8px', padding: '11px', fontSize: '14px', fontWeight: '500', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
