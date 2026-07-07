@@ -1,3 +1,103 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: system-ui, -apple-system, sans-serif; background: #f9fafb; }
 a { text-decoration: none; }
+
+/* ── Layout ── */
+.layout-wrapper { display: flex; min-height: 100vh; }
+
+.sidebar-nav {
+  width: 220px;
+  min-height: 100vh;
+  background: #15803d;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 45;
+  transition: transform 0.25s ease;
+}
+
+.main-area { flex: 1; overflow: auto; min-width: 0; }
+
+/* Hamburger — hidden on desktop */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 50;
+  background: #15803d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  font-size: 20px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Overlay — hidden on desktop */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 40;
+}
+
+/* ── Responsive helpers ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.four-col-auto { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: flex-end; }
+
+.page-pad { padding: 24px; }
+
+/* Bills — table on desktop, cards on mobile */
+.bills-cards { display: none; }
+.bills-table-wrapper { overflow-x: auto; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .sidebar-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    transform: translateX(-100%);
+  }
+  .sidebar-nav.mobile-open { transform: translateX(0); }
+
+  .hamburger-btn { display: flex; }
+  .sidebar-overlay.mobile-open { display: block; }
+
+  .main-area { padding-top: 56px; }
+  .page-pad { padding: 16px; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+  .two-col   { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr; }
+  .four-col-auto { grid-template-columns: 1fr 1fr; }
+
+  /* Bills */
+  .bills-table-wrapper { display: none; }
+  .bills-cards { display: block; }
+
+  /* Rooms grid tighter */
+  .rooms-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  /* Generate bills table scroll */
+  .generate-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
