@@ -4,7 +4,11 @@ import Link from 'next/link'
 
 export default async function RoomsPage() {
   const rooms = await prisma.room.findMany({
-    include: { tenant: true },
+    include: {
+      tenant: {
+        where: { status: 'active' },
+      },
+    },
     orderBy: { roomNumber: 'asc' },
   })
 
@@ -51,7 +55,6 @@ export default async function RoomsPage() {
                 borderRadius: '12px',
                 padding: '16px',
                 cursor: 'pointer',
-                transition: 'box-shadow 0.15s',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
