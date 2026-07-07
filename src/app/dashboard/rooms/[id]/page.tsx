@@ -40,7 +40,7 @@ async function moveOut(formData: FormData) {
   'use server'
   const tenantId = parseInt(formData.get('tenantId') as string)
   const roomId   = parseInt(formData.get('roomId') as string)
-  await prisma.tenant.update({ where: { id: tenantId }, data: { status: 'moved_out', roomId: null } })
+  await prisma.tenant.update({ where: { id: tenantId }, data: { status: 'moved_out', roomId: null as unknown as undefined } })
   await prisma.room.update({ where: { id: roomId }, data: { status: 'available' } })
   revalidatePath('/dashboard/rooms')
   redirect('/dashboard/rooms')
