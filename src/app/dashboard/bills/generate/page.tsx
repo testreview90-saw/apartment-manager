@@ -17,10 +17,10 @@ export default async function GenerateBillsPage() {
 
   const rooms = await prisma.room.findMany({
     where: { status: 'occupied' },
-    include: {
-      tenant: true,
-      bills: { orderBy: { billingMonth: 'desc' }, take: 1 },
-    },
+   include: {
+  tenant: { where: { status: 'active' }, select: { id: true, fullName: true } },
+  bills: { orderBy: { billingMonth: 'desc' }, take: 1 },
+},
     orderBy: { roomNumber: 'asc' },
   })
 
