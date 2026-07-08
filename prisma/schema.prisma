@@ -21,17 +21,14 @@ model Room {
   bills        Bill[]
   applications Application[]
 
+  @@index([status])
+  @@index([floor, roomNumber])
   @@map("rooms")
 }
 
 model Tenant {
   id         Int       @id @default(autoincrement())
-
-  // IMPORTANT FIX:
-  // roomId must be optional so a moved-out tenant can stay in history
-  // without blocking the room from receiving a new tenant.
   roomId     Int?      @unique
-
   fullName   String
   phone      String
   idPhoto    String?
@@ -45,6 +42,8 @@ model Tenant {
   room       Room?     @relation(fields: [roomId], references: [id])
   bills      Bill[]
 
+  @@index([status])
+  @@index([fullName])
   @@map("tenants")
 }
 
@@ -60,6 +59,8 @@ model Application {
 
   room          Room?    @relation(fields: [roomId], references: [id])
 
+  @@index([status, createdAt])
+  @@index([roomId])
   @@map("applications")
 }
 
@@ -91,6 +92,10 @@ model Bill {
   room         Room      @relation(fields: [roomId], references: [id])
 
   @@unique([tenantId, billingMonth])
+  @@index([billingMonth])
+  @@index([billingMonth, status])
+  @@index([roomId, billingMonth])
+  @@index([status])
   @@map("bills")
 }
 
